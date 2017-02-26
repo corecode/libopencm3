@@ -29,6 +29,7 @@ SRCLIBDIR:= $(subst $(space),\$(space),$(realpath lib))
 
 TARGETS := stm32/f0 stm32/f1 stm32/f2 stm32/f3 stm32/f4 stm32/f7
 TARGETS += stm32/l0 stm32/l1 stm32/l4
+TARGETS += gd32/f150
 TARGETS += lpc13xx lpc17xx lpc43xx/m4 lpc43xx/m0
 TARGETS += lm3s lm4f
 TARGETS += efm32/tg efm32/g efm32/lg efm32/gg

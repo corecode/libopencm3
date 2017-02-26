@@ -58,7 +58,7 @@
 # --- output of the awk script ---
 # -DROM=16K -DRAM=4K -DROM_OFF=0x08000000 -DRAM_OFF=0x20000000
 #
-# The generated linker script file will contain sections rom and ram with 
+# The generated linker script file will contain sections rom and ram with
 # appropriate initialization code, specified in linker file source linker.ld.S
 #
 
@@ -165,6 +165,11 @@ stm32w108c8 stm32w ROM=64K RAM=8K
 stm32w108?b stm32w ROM=128K RAM=8K
 stm32w108cz stm32w ROM=192K RAM=12K
 stm32w108cc stm32w ROM=256K RAM=16K
+
+################################################################################
+# the GD32 chips
+
+gd32f150?8* gd32f150 ROM=64K RAM=8K
 
 ################################################################################
 # the SAM3 chips
@@ -404,13 +409,17 @@ stm32f1 END ROM_OFF=0x08000000 RAM_OFF=0x20000000 CPU=cortex-m3 FPU=soft
 stm32f2 END ROM_OFF=0x08000000 RAM_OFF=0x20000000 CPU=cortex-m3 FPU=soft
 stm32f3 END ROM_OFF=0x08000000 RAM_OFF=0x20000000 CPU=cortex-m4 FPU=hard-fpv4-sp-d16
 stm32f4 END ROM_OFF=0x08000000 RAM_OFF=0x20000000 CPU=cortex-m4 FPU=hard-fpv4-sp-d16
-#stm32f7 is supported on GCC-arm-embedded 4.8 2014q4 
+#stm32f7 is supported on GCC-arm-embedded 4.8 2014q4
 stm32f7 END ROM_OFF=0x08000000 RAM_OFF=0x20010000 CPU=cortex-m7 FPU=hard-fpv5-sp-d16
 stm32l0 END ROM_OFF=0x08000000 RAM_OFF=0x20000000 CPU=cortex-m0plus FPU=soft
 stm32l1 END ROM_OFF=0x08000000 RAM_OFF=0x20000000 CPU=cortex-m3 FPU=soft
 stm32l4 END ROM_OFF=0x08000000 RAM_OFF=0x20000000 CPU=cortex-m4 FPU=hard-fpv4-sp-d16
 stm32w END ROM_OFF=0x08000000 RAM_OFF=0x20000000 CPU=cortex-m3 FPU=soft
 stm32t END ROM_OFF=0x08000000 RAM_OFF=0x20000000 CPU=cortex-m3 FPU=soft
+
+################################################################################
+# the GD32 families
+gd32f150 END ROM_OFF=0x08000000 RAM_OFF=0x20000000 CPU=cortex-m3 FPU=soft
 
 ################################################################################
 # the SAM3 families

@@ -1,7 +1,20 @@
-/* This provides unification of code over STM32 subfamilies */
-
+/** @defgroup exti_defines EXTI Defines
+ *
+ * @brief <b>Defined Constants and Types for the GD32F150 External Interrupts
+ * </b>
+ *
+ * @ingroup GD32F150_defines
+ *
+ * @version 1.0.0
+ *
+ * @date 11 July 2013
+ *
+ * LGPL License Terms @ref lgpl_license
+ */
 /*
  * This file is part of the libopencm3 project.
+ *
+ * Copyright (C) 2013 Frantisek Burian <BuFran@seznam.cz>
  *
  * This library is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,23 +30,11 @@
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libopencm3/cm3/common.h>
-#include <libopencm3/stm32/memorymap.h>
+#ifndef LIBOPENCM3_EXTI_H
+#define LIBOPENCM3_EXTI_H
+/**@{*/
 
-#if defined(STM32F0)
-#       include <libopencm3/stm32/f0/dac.h>
-#elif defined(STM32F1)
-#       include <libopencm3/stm32/f1/dac.h>
-#elif defined(STM32F2)
-#       include <libopencm3/stm32/f2/dac.h>
-#elif defined(STM32F3)
-#       include <libopencm3/stm32/f3/dac.h>
-#elif defined(STM32F4)
-#       include <libopencm3/stm32/f4/dac.h>
-#elif defined(STM32L1)
-#       include <libopencm3/stm32/l1/dac.h>
-#elif defined(GD32F150)
-#       include <libopencm3/gd32/f150/dac.h>
-#else
-#       error "stm32 family not defined."
+#include <libopencm3/stm32/common/exti_common_all.h>
+/**@}*/
+
 #endif

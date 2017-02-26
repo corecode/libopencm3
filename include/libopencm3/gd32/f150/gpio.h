@@ -1,4 +1,16 @@
-/* This provides unification of code over STM32 subfamilies */
+/** @defgroup gpio_defines GPIO Defines
+ *
+ * @brief <b>Defined Constants and Types for the STM32F3xx General Purpose
+ * I/O</b>
+ *
+ * @ingroup STM32F3xx_defines
+ *
+ * @version 1.0.0
+ *
+ * @date 1 July 2012
+ *
+ * LGPL License Terms @ref lgpl_license
+ */
 
 /*
  * This file is part of the libopencm3 project.
@@ -17,23 +29,9 @@
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libopencm3/cm3/common.h>
-#include <libopencm3/stm32/memorymap.h>
+#ifndef LIBOPENCM3_GPIO_H
+#define LIBOPENCM3_GPIO_H
 
-#if defined(STM32F0)
-#       include <libopencm3/stm32/f0/dac.h>
-#elif defined(STM32F1)
-#       include <libopencm3/stm32/f1/dac.h>
-#elif defined(STM32F2)
-#       include <libopencm3/stm32/f2/dac.h>
-#elif defined(STM32F3)
-#       include <libopencm3/stm32/f3/dac.h>
-#elif defined(STM32F4)
-#       include <libopencm3/stm32/f4/dac.h>
-#elif defined(STM32L1)
-#       include <libopencm3/stm32/l1/dac.h>
-#elif defined(GD32F150)
-#       include <libopencm3/gd32/f150/dac.h>
-#else
-#       error "stm32 family not defined."
+#include <libopencm3/stm32/common/gpio_common_f234.h>
+
 #endif
