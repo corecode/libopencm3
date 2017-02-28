@@ -36,6 +36,7 @@ extern funcp_t __fini_array_start, __fini_array_end;
 void main(void);
 void blocking_handler(void);
 void null_handler(void);
+void __attribute__ ((naked)) default_reset_handler(void);
 
 __attribute__ ((section(".vectors")))
 vector_table_t vector_table = {
@@ -60,7 +61,7 @@ vector_table_t vector_table = {
 	}
 };
 
-void __attribute__ ((weak, naked)) reset_handler(void)
+void __attribute__ ((naked)) default_reset_handler(void)
 {
 	volatile unsigned *src, *dest;
 	funcp_t *fp;
@@ -110,6 +111,7 @@ void null_handler(void)
 	/* Do nothing. */
 }
 
+#pragma weak reset_handler = default_reset_handler
 #pragma weak nmi_handler = null_handler
 #pragma weak hard_fault_handler = blocking_handler
 #pragma weak sv_call_handler = null_handler
@@ -123,4 +125,3 @@ void null_handler(void)
 #pragma weak usage_fault_handler = blocking_handler
 #pragma weak debug_monitor_handler = null_handler
 #endif
-
