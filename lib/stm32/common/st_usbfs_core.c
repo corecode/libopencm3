@@ -236,6 +236,7 @@ void st_usbfs_poll(usbd_device *dev)
 			} else {
 				type = USB_TRANSACTION_OUT;
 			}
+			USB_CLR_EP_RX_CTR(ep);
 		} else {
 			type = USB_TRANSACTION_IN;
 			USB_CLR_EP_TX_CTR(ep);
@@ -243,8 +244,6 @@ void st_usbfs_poll(usbd_device *dev)
 
 		if (dev->user_callback_ctr[ep][type]) {
 			dev->user_callback_ctr[ep][type] (dev, ep);
-		} else {
-			USB_CLR_EP_RX_CTR(ep);
 		}
 	}
 
