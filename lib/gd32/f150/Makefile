@@ -42,7 +42,7 @@ OBJS            += crc_common_all.o dac_common_all.o dma_common_l1f013.o \
                    gpio_common_f0234.o \
                    gpio_common_all.o i2c_common_all.o iwdg_common_all.o \
                    pwr_common_all.o spi_common_all.o spi_common_l1f124.o \
-                   timer_common_all.o usart_common_all.o usart_common_f124.o \
+                   timer_common_all.o usart_common_v2.o usart.o \
                    rcc_common_all.o exti_common_all.o \
                    flash_common_f01.o
 
@@ -50,6 +50,12 @@ OBJS            += usb.o usb_control.o usb_standard.o usb_msc.o
 OBJS		+= st_usbfs_core.o st_usbfs_v1.o
 
 VPATH +=
-vpath %.c ../../usb:../../stm32:../../cm3:../../stm32/common:../../stm32/f1
+vpath %.c ../../usb:../../stm32:../../cm3:../../stm32/common
 
 include ../../Makefile.include
+
+define stm32src
+$(foreach src,$(2),$(eval vpath ${src}.c ../../stm32/$(1)))
+endef
+
+$(call stm32src,f1,adc flash timer)

@@ -28,9 +28,4 @@ LGPL License Terms @ref lgpl_license
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBOPENCM3_USART_H
-#define LIBOPENCM3_USART_H
-
-#include <libopencm3/stm32/common/usart_common_f124.h>
-
-#endif
+#include <libopencm3/stm32/f0/usart.h>
