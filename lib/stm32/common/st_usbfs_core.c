@@ -19,12 +19,15 @@
  */
 
 #include <libopencm3/cm3/common.h>
+#include <libopencm3/cm3/assert.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/tools.h>
 #include <libopencm3/stm32/st_usbfs.h>
 #include <libopencm3/usb/usbd.h>
 #include "../../usb/usb_private.h"
 #include "st_usbfs_core.h"
+
+#include <libopencm3/stm32/gpio.h>
 
 /* TODO - can't these be inside the impls, not globals from the core? */
 uint8_t st_usbfs_force_nak[8];
@@ -110,6 +113,8 @@ void st_usbfs_endpoints_reset(usbd_device *dev)
 	for (i = 1; i < 8; i++) {
 		USB_SET_EP_TX_STAT(i, USB_EP_TX_STAT_DISABLED);
 		USB_SET_EP_RX_STAT(i, USB_EP_RX_STAT_DISABLED);
+		/* USB_CLR_EP_RX_CTR(i); */
+		/* USB_CLR_EP_TX_CTR(i); */
 	}
 	dev->pm_top = USBD_PM_TOP + (2 * dev->desc->bMaxPacketSize0);
 }
@@ -139,8 +144,14 @@ void st_usbfs_ep_stall_set(usbd_device *dev, uint8_t addr,
 			USB_CLR_EP_RX_DTOG(addr);
 		}
 
+		if (stall && addr == 0) {
+			USB_CLR_EP_RX_CTR(addr);
+		}
 		USB_SET_EP_RX_STAT(addr, stall ? USB_EP_RX_STAT_STALL :
 				   USB_EP_RX_STAT_VALID);
+		if (stall && addr != 0) {
+			USB_CLR_EP_RX_CTR(addr);
+		}
 	}
 }
 
@@ -174,6 +185,13 @@ void st_usbfs_ep_nak_set(usbd_device *dev, uint8_t addr, uint8_t nak)
 	if (nak) {
 		USB_SET_EP_RX_STAT(addr, USB_EP_RX_STAT_NAK);
 	} else {
+		/* if (addr == 0) { */
+		/* 	if (dev->control_state.state == STATUS_OUT) { */
+		/* 		USB_SET_EP_KIND(addr); */
+		/* 	} else { */
+		/* 		USB_CLR_EP_KIND(addr); */
+		/* 	} */
+		/* } */
 		USB_SET_EP_RX_STAT(addr, USB_EP_RX_STAT_VALID);
 	}
 }
@@ -185,7 +203,10 @@ uint16_t st_usbfs_ep_write_packet(usbd_device *dev, uint8_t addr,
 	addr &= 0x7F;
 
 	if ((*USB_EP_REG(addr) & USB_EP_TX_STAT) == USB_EP_TX_STAT_VALID) {
-		return 0;
+		/* return 0; */
+		*USB_CNTR_REG = USB_CNTR_PWDN;
+		gpio_clear(GPIOB, GPIO1);
+		cm3_assert_not_reached();
 	}
 
 	st_usbfs_copy_to_pm(USB_GET_EP_TX_BUFF(addr), buf, len);
@@ -199,17 +220,55 @@ uint16_t st_usbfs_ep_read_packet(usbd_device *dev, uint8_t addr,
 					 void *buf, uint16_t len)
 {
 	(void)dev;
-	if ((*USB_EP_REG(addr) & USB_EP_RX_STAT) == USB_EP_RX_STAT_VALID) {
-		return 0;
+	// uint16_t epr;
+	// uint16_t epr2;
+
+	if (((*USB_EP_REG(addr)) & USB_EP_RX_STAT) == USB_EP_RX_STAT_VALID || /* if it is already marked as ready */
+	    !((*USB_EP_REG(addr)) & USB_EP_RX_CTR)) { /* or if the transfer has already been acknowledged */
+		cm3_assert_not_reached();
 	}
 
 	len = MIN(USB_GET_EP_RX_COUNT(addr) & 0x3ff, len);
 	st_usbfs_copy_from_pm(buf, USB_GET_EP_RX_BUFF(addr), len);
-	USB_CLR_EP_RX_CTR(addr);
+	/* USB_SET_EP_RX_COUNT(addr, 0); */
+
+	/**
+	 * - check that RX_CTR has not been cleared before we enter here.
+	 *
+	 * - if we're not dealing with any past or future SETUP packets, then everything is simple.
+	 * - if we are about to read a SETUP packet...
+	 *   - check for SETUP?
+	 *   - clear both RX_STAT and RX_CTR at the same time
+	 * - if a SETUP packet is about to arrive after the one we're ACK'ing here...
+	 *   - clear RX_CTR and set RX_STAT to VALID at the same time.
+	 *   - check for SETUP before doing this?
+	 */
+
+	/* uint16_t epr = *USB_EP_REG(addr); */
+	/* uint16_t epr_write = epr & ~(USB_EP_RX_DTOG | USB_EP_RX_STAT | USB_EP_TX_DTOG | USB_EP_TX_STAT); */
+	/* epr_write |= USB_EP_RX_CTR | USB_EP_TX_CTR; */
+
+	/* /\* clear CTR_RX *\/ */
+	/* epr_write &= ~USB_EP_RX_CTR; */
+
+	/* if (!st_usbfs_force_nak[addr]) { */
+	/* 	uint16_t cur_rx_stat = epr & USB_EP_RX_STAT_TOG_MSK; */
+	/* 	epr_write |= USB_EP_RX_STAT_VALID ^ cur_rx_stat; */
+	/* } */
+	/* if (addr == 0) { */
+	/* 	if (dev->control_state.state == STATUS_OUT) { */
+	/* 		epr_write |= USB_EP_KIND; */
+	/* 	} else { */
+	/* 		epr_write &= ~USB_EP_KIND; */
+	/* 	} */
+	/* } */
+
+	/* *USB_EP_REG(addr) = epr_write; */
 
 	if (!st_usbfs_force_nak[addr]) {
 		USB_SET_EP_RX_STAT(addr, USB_EP_RX_STAT_VALID);
 	}
+	USB_CLR_EP_RX_CTR(addr);
 
 	return len;
 }
@@ -218,33 +277,100 @@ void st_usbfs_poll(usbd_device *dev)
 {
 	uint16_t istr = *USB_ISTR_REG;
 
+	for (; istr & USB_ISTR_CTR; istr = *USB_ISTR_REG) {
+		uint8_t ep = istr & USB_ISTR_EP_ID;
+		uint8_t type;
+
+		/**
+		 * Possible states for a control endpoint:
+		 * - DIR, RX_CTR, SETUP, ~tx_ctr: handled SETUP token, trivial
+		 * - DIR, RX_CTR, ~setup, ~tx_ctr: handled DATA OUT token, trivial
+		 * - ~dir, ~rx_ctr, ~setup, TX_CTR: handled DATA IN token, trivial
+		 * - DIR, RX_CTR, SETUP, TX_CTR: handled DATA IN token (potentially previous control transfer confirmation), handled SETUP token
+		 * - DIR, RX_CTR, ~setup, TX_CTR: handled DATA IN token and DATA OUT token.  Order is not clear.
+		 *   Avoid this situation by only allowing either IN or OUT be VALID at any time and set the other to STALL or NAK.
+		 * Impossible:
+		 * - DIR, RX_CTR, SETUP, ~tx_ctr: handled DATA OUT token (potentially previous control transfer confirmation), handled SETUP token
+		 *   This cannot happen, because while RX_CTR is set, SETUP will not be set, i.e. an incoming SETUP token will be discarded.
+		 *
+		 * Processing order:
+		 * - if TX_CTR and RX_CTR (and SETUP) set, then process TX before SETUP.  If SETUP not set, our state machine made a mistake.
+		 */
+
+		volatile uint16_t epr = *USB_EP_REG(ep);
+		int rx = !!(epr & USB_EP_RX_CTR);
+		int tx = !!(epr & USB_EP_TX_CTR);
+
+		if (rx && (epr & USB_EP_RX_STAT) == USB_EP_RX_STAT_DISABLED) {
+			USB_CLR_EP_RX_CTR(ep);
+			continue;
+		}
+
+		if (tx && (epr & USB_EP_TX_STAT) == USB_EP_TX_STAT_DISABLED) {
+			USB_CLR_EP_TX_CTR(ep);
+			continue;
+		}
+
+
+		if (rx && (epr & USB_EP_RX_STAT) == USB_EP_RX_STAT_VALID) {
+			/* loop until clear */
+			continue;
+		}
+
+		if (tx && (epr & USB_EP_TX_STAT) == USB_EP_TX_STAT_DISABLED) {
+			/* loop until clear */
+			continue;
+		}
+
+
+		if (rx && tx) {
+			type = USB_TRANSACTION_IN;
+		} else if (rx) {
+			/* OUT or SETUP? */
+			if (epr & USB_EP_SETUP) {
+				type = USB_TRANSACTION_SETUP;
+			} else {
+				type = USB_TRANSACTION_OUT;
+			}
+		} else if (tx) {
+			type = USB_TRANSACTION_IN;
+		} else {
+			cm3_assert_not_reached();
+		}
+
+		if (type == USB_TRANSACTION_IN)
+			USB_CLR_EP_TX_CTR(ep);
+
+		/* static volatile int callback_count; */
+
+		if (dev->user_callback_ctr[ep][type]) {
+			/* if ((*USB_EP_REG(0) & USB_EP_TX_STAT) == USB_EP_TX_STAT_VALID) { */
+			/* 	cm3_assert_not_reached(); */
+			/* } */
+			/* gpio_toggle(GPIOA, GPIO10); */
+			/* callback_count++; */
+
+			/* if (callback_count == 8) { */
+			/* 	*USB_CNTR_REG = USB_CNTR_PWDN; */
+			/* 	for (volatile int i = 0; i < 10; i++) */
+			/* 		i++; */
+			/* 	/\* gpio_clear(GPIOB, GPIO1); *\/ */
+			/* 	/\* cm3_assert_not_reached(); *\/ */
+			/* } */
+
+			dev->user_callback_ctr[ep][type] (dev, ep);
+			/* gpio_toggle(GPIOA, GPIO10); */
+		} else {
+			if (type != USB_TRANSACTION_IN)
+				USB_CLR_EP_RX_CTR(ep);
+		}
+	}
+
 	if (istr & USB_ISTR_RESET) {
 		USB_CLR_ISTR_RESET();
 		dev->pm_top = USBD_PM_TOP;
 		_usbd_reset(dev);
 		return;
-	}
-
-	if (istr & USB_ISTR_CTR) {
-		uint8_t ep = istr & USB_ISTR_EP_ID;
-		uint8_t type;
-
-		if (istr & USB_ISTR_DIR) {
-			/* OUT or SETUP? */
-			if (*USB_EP_REG(ep) & USB_EP_SETUP) {
-				type = USB_TRANSACTION_SETUP;
-			} else {
-				type = USB_TRANSACTION_OUT;
-			}
-			USB_CLR_EP_RX_CTR(ep);
-		} else {
-			type = USB_TRANSACTION_IN;
-			USB_CLR_EP_TX_CTR(ep);
-		}
-
-		if (dev->user_callback_ctr[ep][type]) {
-			dev->user_callback_ctr[ep][type] (dev, ep);
-		}
 	}
 
 	if (istr & USB_ISTR_SUSP) {
