@@ -23,10 +23,6 @@ PREFIX		?= arm-none-eabi
 STYLECHECK      := scripts/checkpatch.pl
 STYLECHECKFLAGS := --no-tree -f --terse --mailback
 
-space:=
-space+=
-SRCLIBDIR:= $(subst $(space),\$(space),$(realpath lib))
-
 TARGETS := stm32/f0 stm32/f1 stm32/f2 stm32/f3 stm32/f4 stm32/f7
 TARGETS += stm32/l0 stm32/l1 stm32/l4
 TARGETS += gd32/f150
@@ -62,7 +58,7 @@ build: lib
 LIB_DIRS:=$(wildcard $(addprefix lib/,$(TARGETS)))
 $(LIB_DIRS): $(IRQ_DEFN_FILES:=.genhdr)
 	@printf "  BUILD   $@\n";
-	$(Q)$(MAKE) --directory=$@ SRCLIBDIR="$(SRCLIBDIR)"
+	$(Q)$(MAKE) --directory=$@
 
 lib: $(LIB_DIRS)
 	$(Q)true
@@ -75,7 +71,7 @@ clean: $(IRQ_DEFN_FILES:=.cleanhdr) $(LIB_DIRS:=.clean) $(EXAMPLE_DIRS:=.clean) 
 %.clean:
 	$(Q)if [ -d $* ]; then \
 		printf "  CLEAN   $*\n"; \
-		$(MAKE) -C $* clean SRCLIBDIR="$(SRCLIBDIR)" || exit $?; \
+		$(MAKE) -C $* clean || exit $?; \
 	fi;
 
 
